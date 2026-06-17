@@ -1,0 +1,13 @@
+GAS OPTIMIZATION ISSUES
+Severity: LOW
+
+1. Storage reads in loops - cache array length:
+uint len = users.length;
+for (uint i = 0; i < len; i++) { ... }
+
+2. Unbounded loops can run out of gas and revert.
+
+3. uint256 is cheaper than uint8 in EVM (256-bit word size).
+
+4. Avoid redundant SLOAD/SSTORE operations.
+Keywords: for loop, storage, gas, uint8, array length, unbounded

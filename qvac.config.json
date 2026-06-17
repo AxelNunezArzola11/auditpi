@@ -1,0 +1,16 @@
+{
+  "plugins": [
+    "@qvac/sdk/llamacpp-completion/plugin",
+    "@qvac/sdk/llamacpp-embedding/plugin"
+  ],
+  "serve": {
+    "models": {
+      "auditpi-llm": {
+        "model": "QWEN3_600M_INST_Q4",
+        "default": true,
+        "preload": false,
+        "config": { "ctx_size": 2048, "device": "cpu" }
+      }
+    }
+  }
+}

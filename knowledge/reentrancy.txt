@@ -1,0 +1,27 @@
+REENTRANCY VULNERABILITY (SWC-107)
+Severity: CRITICAL
+
+Description: External call made BEFORE state update allows attacker to re-enter and drain funds.
+
+VULNERABLE PATTERN:
+function withdraw() public {
+    uint amount = balances[msg.sender];
+    (bool ok,) = msg.sender.call{value: amount}("");
+    require(ok);
+    balances[msg.sender] = 0;
+}
+
+ATTACK: Attacker fallback() re-calls withdraw() before balances[msg.sender]=0 executes.
+Real exploit: The DAO hack 2016, $60M stolen.
+
+FIXED PATTERN - Checks-Effects-Interactions:
+function withdraw() public {
+    uint amount = balances[msg.sender];
+    require(amount > 0);
+    balances[msg.sender] = 0;
+    (bool ok,) = msg.sender.call{value: amount}("");
+    require(ok);
+}
+
+Use ReentrancyGuard from OpenZeppelin: nonReentrant modifier.
+Keywords: .call{value:}, external call, fallback, receive, msg.sender.call, before state update

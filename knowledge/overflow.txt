@@ -1,0 +1,15 @@
+INTEGER OVERFLOW AND UNDERFLOW (SWC-101)
+Severity: HIGH
+
+Solidity below 0.8.0 arithmetic wraps silently.
+
+VULNERABLE:
+uint256 balance = 0;
+balance -= 1; // underflow: becomes 2^256-1
+
+FIXED:
+Use Solidity 0.8.0 or higher (built-in checks).
+Or use SafeMath: balance = balance.sub(amount);
+
+Real exploit: BEC Token 2018, unlimited tokens minted.
+Keywords: uint, int, SafeMath, unchecked, pragma solidity ^0.7, ^0.6

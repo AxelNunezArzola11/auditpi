@@ -1,0 +1,4 @@
+node_modules/
+qvac/worker.bundle.js
+*.log
+.env

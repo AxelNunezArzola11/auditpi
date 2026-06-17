@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>AuditPi — Smart Contract Security</title>
+  <style>
+    body { font-family: monospace; background: #0d0d0d; color: #00ff88; margin: 0; padding: 20px; }
+    h1 { color: #00ff88; }
+    textarea { width: 100%; height: 200px; background: #111; color: #ccc; border: 1px solid #333; padding: 10px; font-family: monospace; }
+    button { background: #00ff88; color: #000; border: none; padding: 10px 24px; cursor: pointer; font-weight: bold; margin-top: 10px; }
+    #status { color: #888; margin: 10px 0; }
+    #result { background: #111; border: 1px solid #333; padding: 16px; margin-top: 16px; white-space: pre-wrap; }
+    .critical { color: #ff4444; }
+    .high { color: #ff8800; }
+    .medium { color: #ffcc00; }
+    .low { color: #88ff88; }
+  </style>
+</head>
+<body>
+  <h1>🔐 AuditPi</h1>
+  <p>On-device smart contract security — powered by QVAC on Raspberry Pi</p>
+
+  <div id="status">Checking model status...</div>
+
+  <textarea id="code" placeholder="// Paste your Solidity code here...
+pragma solidity ^0.8.0;
+contract Vulnerable { ... }"></textarea>
+
+  <br>
+  <button onclick="analyze()">🔍 Analyze Contract</button>
+  <label id="fileLabel" style="margin-left:10px; background:#1a1a1a; color:#888; border:1px solid #333; padding:8px 16px; cursor:pointer; font-family:monospace;">
+    📁 Select .sol file
+    <input type="file" accept=".sol" onchange="analyzeFile(this); document.getElementById('fileLabel').style.color='#00ff88'" style="display:none">
+  </label>
+
+  <div id="result"></div>
+
+  <script>
+    async function checkStatus() {
+      const r = await fetch('/health')
+      const data = await r.json()
+      document.getElementById('status').textContent =
+        data.status === 'ready' ? '✅ Model ready' : '⏳ Loading model...'
+      if (data.status !== 'ready') setTimeout(checkStatus, 2000)
+    }
+
+    async function analyze() {
+      const code = document.getElementById('code').value
+      if (!code.trim()) return alert('Paste some Solidity code first')
+      document.getElementById('result').textContent = '⏳ Analyzing...'
+      const r = await fetch('/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code })
+      })
+      const data = await r.json()
+      renderReport(data.report)
+    }
+
+    async function analyzeFile(input) {
+      const file = input.files[0]
+      if (!file) return
+      const fd = new FormData()
+      fd.append('contract', file)
+      document.getElementById('result').textContent = `⏳ Analyzing ${file.name}...`
+      const r = await fetch('/analyze/file', { method: 'POST', body: fd })
+      const data = await r.json()
+      renderReport(data.report)
+    }
+
+    function renderReport(report) {
+      if (!report) return
+      const el = document.getElementById('result')
+      if (report.raw) { el.textContent = report.raw; return }
+      let html = `<b>Score: ${report.score}/100 — Severity: <span class="${report.severity?.toLowerCase()}">${report.severity}</span></b>\n`
+      html += `\n${report.summary}\n`
+      if (report.vulnerabilities?.length) {
+        html += `\n<b>Vulnerabilities (${report.vulnerabilities.length}):</b>\n`
+        report.vulnerabilities.forEach(v => {
+          html += `\n  <span class="${v.severity?.toLowerCase()}">▶ [${v.severity}] ${v.type} (line ${v.line})</span>\n`
+          html += `    ${v.description}\n`
+          html += `    Fix: ${v.fix}\n`
+        })
+      }
+      if (report.gas_issues?.length) {
+        html += `\n<b>Gas Optimizations:</b>\n`
+        report.gas_issues.forEach(g => html += `  • ${g}\n`)
+      }
+      el.innerHTML = html
+    }
+
+    checkStatus()
+  </script>
+</body>
+</html>

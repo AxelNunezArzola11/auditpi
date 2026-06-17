@@ -1,0 +1,19 @@
+ACCESS CONTROL VULNERABILITIES (SWC-105, SWC-106)
+Severity: CRITICAL
+
+VULNERABLE - missing modifier:
+function mint(address to, uint amount) public {
+    balances[to] += amount;
+}
+
+VULNERABLE - tx.origin phishing:
+require(tx.origin == owner);
+
+VULNERABLE - unprotected selfdestruct:
+function destroy() public { selfdestruct(payable(msg.sender)); }
+
+FIXED:
+function mint(address to, uint amount) public onlyOwner { ... }
+require(msg.sender == owner);
+Use OpenZeppelin Ownable or AccessControl.
+Keywords: owner, onlyOwner, tx.origin, selfdestruct, initialize, public, admin
