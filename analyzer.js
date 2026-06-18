@@ -1,3 +1,4 @@
+import { logModelLoad, logModelUnload, logInference } from './logger.js'
 import {
   loadModel,
   unloadModel,
@@ -27,6 +28,7 @@ export async function initModels(onProgress) {
     modelConfig: { device: 'cpu' },
     onProgress,
   })
+  logModelLoad('EMBEDDINGGEMMA_300M_Q4_0')
 
   console.log('Loading LLM...')
   llmId = await loadModel({
@@ -35,6 +37,7 @@ export async function initModels(onProgress) {
     modelConfig: { device: 'cpu', ctx_size: 4096 },
     onProgress,
   })
+  logModelLoad('QWEN3_4B_INST_Q4_K_M')
 
   await ingestKnowledgeBase()
   console.log('AuditPi ready ✓')
@@ -69,21 +72,34 @@ export async function analyzeContract(solidityCode) {
     {
       role: 'system',
       content: `You are a smart contract auditor. Analyze Solidity code for vulnerabilities. Respond ONLY with JSON:
-{"summary":"...","severity":"LOW|MEDIUM|HIGH|CRITICAL","vulnerabilities":[{"type":"...","line":"...","severity":"...","description":"...","fix":"..."}],"score":0} /no_think`
+{"summary":"...","severity":"LOW|MEDIUM|HIGH|CRITICAL","vulnerabilities":[{"type":"...","line":"...","severity":"...","description":"...","fix":"..."}]}`,
     },
     {
       role: 'user',
-      content: `Audit this contract:\n\`\`\`solidity\n${code}\n\`\`\``
+      content: `Audit this contract:\n\`\`\`solidity\n${code}\n\`\`\``,
     },
   ]
 
   let output = ''
+  const t0 = Date.now()
+  let firstTokenTime = null
+
   const result = completion({ modelId: llmId, history, stream: true, maxTokens: 600 })
   for await (const token of result.tokenStream) {
+    if (!firstTokenTime) firstTokenTime = Date.now()
     output += token
     process.stdout.write(token)
   }
   process.stdout.write('\n')
+
+  const elapsed = (Date.now() - t0) / 1000
+  const outputTokens = output.split(/\s+/).length
+  logInference({
+    prompt: `Audit contract: ${solidityCode.slice(0, 80)}`,
+    outputTokens,
+    ttft: firstTokenTime ? firstTokenTime - t0 : 0,
+    tokensPerSec: parseFloat((outputTokens / elapsed).toFixed(2)),
+  })
 
   // Limpiar thinking tags y markdown
   const clean = output
@@ -102,6 +118,12 @@ export async function analyzeContract(solidityCode) {
 
 export async function shutdown() {
   if (ragReady) await ragCloseWorkspace({ workspaceId: WORKSPACE_ID })
-  if (embedId) await unloadModel({ modelId: embedId })
-  if (llmId) await unloadModel({ modelId: llmId })
+  if (embedId) {
+    await unloadModel({ modelId: embedId })
+    logModelUnload('EMBEDDINGGEMMA_300M_Q4_0')
+  }
+  if (llmId) {
+    await unloadModel({ modelId: llmId })
+    logModelUnload('QWEN3_4B_INST_Q4_K_M')
+  }
 }

@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "bundleId": "02ab606ae6f5e49fdd111e7b98e522530b341a783969499fa266aef6b296197f",
+  "bundleId": "a922e5cb36f77846bbf2165d39b8bfc649dd8bb7ec5c22b19d540557973709d2",
   "addons": [
     "@qvac/embed-llamacpp",
     "@qvac/llm-llamacpp",
