@@ -1,6 +1,6 @@
 # 🔐 AuditPi — On-Device Smart Contract Security Sentinel
 
-> Autonomous, offline-first smart contract security analyzer running entirely on a Raspberry Pi 5.
+> Autonomous, offline-first smart contract security analyzer running entirely on a Raspberry Pi 4.
 > Powered by QVAC SDK + Qwen3 4B LLM + RAG — zero cloud dependencies.
 
 ## 🏆 QVAC Hackathon I — Tinkerer Track
